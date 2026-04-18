@@ -110,6 +110,7 @@ const BLDS=[
   {id:'gymnasium',label:"GYMNASIUM",dept:'Physical Education · Health',x:1750,y:800,w:280,h:200,style:'gym',emoji:'🏃',accent:'#ff6600'},
   {id:'computer-lab',label:"COMPUTER\nLAB",dept:'Coding · Digital Literacy · STEM',x:420,y:1200,w:280,h:180,style:'tech',emoji:'💻',accent:'#00ccff'},
   {id:'library',label:"LIBRARY",dept:'Books · Research · Reading',x:1100,y:1300,w:280,h:180,style:'library',emoji:'📖',accent:'#d4a054'},
+  {id:'bus-stop',label:"BUS STOP\n→ Spartan Campus",dept:'Catch the bus to USC Upstate!',x:1800,y:1540,w:180,h:110,style:'bus-stop',emoji:'🚌',accent:'#FFD700',portal:'https://kashee12345.github.io/spartan-campus/'},
 ];
 
 const ACTIVITIES={
@@ -571,6 +572,18 @@ function drawBuilding(b,ox,oy){
     cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
     cx.fillStyle='rgba(153,102,255,0.15)';
     for(let r=0;r<3;r++)for(let c=0;c<3;c++){cx.fillRect(bx+14+c*84,by+16+r*48,68,36);cx.strokeStyle='rgba(153,102,255,0.4)';cx.lineWidth=1;cx.strokeRect(bx+14+c*84,by+16+r*48,68,36);}
+  } else if(style==='bus-stop'){
+    cx.fillStyle='#1a1000';cx.fillRect(bx,by,b.w,b.h);
+    cx.fillStyle='#FFD700';cx.fillRect(bx,by,b.w,14);
+    cx.fillStyle='#cc9900';cx.fillRect(bx,by+12,b.w,3);
+    cx.fillStyle='#888';cx.fillRect(bx+12,by+14,7,b.h-14);cx.fillRect(bx+b.w-19,by+14,7,b.h-14);
+    cx.fillStyle='rgba(180,230,255,0.18)';cx.fillRect(bx+21,by+16,b.w-42,b.h-30);
+    cx.strokeStyle='rgba(180,230,255,0.5)';cx.lineWidth=1;cx.strokeRect(bx+21,by+16,b.w-42,b.h-30);
+    cx.fillStyle='#cc0000';cx.fillRect(bx+b.w/2-26,by+20,52,14);
+    cx.fillStyle='#fff';cx.font="4px 'Press Start 2P',monospace";cx.textAlign='center';
+    cx.fillText('ROUTE 1',bx+b.w/2,by+30);
+    cx.fillStyle='#8B6914';cx.fillRect(bx+24,by+b.h-20,b.w-48,8);
+    cx.fillRect(bx+24,by+b.h-28,6,10);cx.fillRect(bx+b.w-30,by+b.h-28,6,10);
   } else {
     cx.fillStyle='#2a2a3a';cx.fillRect(bx,by,b.w,b.h);
   }
@@ -674,6 +687,7 @@ function loop(ts){if(ts-lastTime>16){lastTime=ts;update();render();}requestAnima
 
 // ── OVERLAY ──────────────────────────────────────────────────────────────────
 function openBuilding(b){
+  if(b.portal){window.location.href=b.portal;return;}
   currentBuilding=b;
   document.getElementById('ovTitle').textContent=b.label.replace('\n',' ');
   document.getElementById('ovDept').textContent=b.dept;
