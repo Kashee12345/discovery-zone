@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dr. Garg's Discovery Zone — K-12 Learning Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;overflow:hidden;font-family:'Press Start 2P',monospace;}
+#gameWrap{position:relative;width:960px;height:600px;}
+canvas{display:block;image-rendering:pixelated;}
+#hud{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:10;}
+#hudLeft{background:rgba(10,20,40,0.88);border:2px solid #F5A623;padding:6px 10px;border-radius:4px;}
+#hudLeft span{color:#F5A623;font-size:7px;display:block;line-height:1.8;}
+#minimap{width:110px;height:88px;background:rgba(10,20,40,0.88);border:2px solid #F5A623;border-radius:4px;position:relative;overflow:hidden;}
+#minimap canvas{width:100%;height:100%;}
+#promptBanner{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(10,20,40,0.9);border:2px solid #F5A623;padding:6px 14px;border-radius:4px;color:#F5A623;font-size:7px;pointer-events:none;z-index:10;white-space:nowrap;opacity:0;transition:opacity 0.3s;}
+#splash{position:absolute;inset:0;background:linear-gradient(160deg,#0a1628 0%,#1a3a5c 40%,#0e2a1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;}
+.tseal{font-size:52px;margin-bottom:16px;filter:drop-shadow(0 0 18px #F5A623);}
+.stitle{color:#F5A623;font-size:13px;text-align:center;line-height:2.2;text-shadow:0 0 12px #F5A623aa;letter-spacing:2px;}
+.ssub{color:#aaa;font-size:6px;margin-top:12px;text-align:center;letter-spacing:1px;}
+#startBtn{margin-top:24px;background:#F5A623;color:#0a1628;border:none;font-family:'Press Start 2P',monospace;font-size:9px;padding:10px 28px;border-radius:4px;cursor:pointer;letter-spacing:1px;}
+#startBtn:hover{background:#e8890c;}
+#overlay{position:absolute;inset:0;background:rgba(0,0,0,0.82);display:none;align-items:center;justify-content:center;z-index:50;}
+#overlayBox{background:linear-gradient(160deg,#0a1628,#1a3a5c);border:3px solid #F5A623;border-radius:8px;width:680px;max-height:520px;overflow-y:auto;padding:24px;}
+#overlayBox::-webkit-scrollbar{width:6px;}
+#overlayBox::-webkit-scrollbar-thumb{background:#F5A623;border-radius:3px;}
+.ovTitle{color:#F5A623;font-size:12px;margin-bottom:6px;text-align:center;}
+.ovDept{color:#aaa;font-size:6px;text-align:center;margin-bottom:16px;}
+.gradeBar{display:flex;gap:8px;justify-content:center;margin-bottom:18px;}
+.gradeBtn{background:rgba(245,166,35,0.15);border:2px solid #F5A623;color:#F5A623;font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 14px;border-radius:4px;cursor:pointer;}
+.gradeBtn.active,.gradeBtn:hover{background:#F5A623;color:#0a1628;}
+.actGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.actCard{background:rgba(255,255,255,0.06);border:2px solid rgba(245,166,35,0.4);border-radius:6px;padding:12px;cursor:pointer;transition:border-color 0.2s;}
+.actCard:hover{border-color:#F5A623;background:rgba(245,166,35,0.12);}
+.actIcon{font-size:22px;margin-bottom:6px;}
+.actName{color:#F5A623;font-size:7px;margin-bottom:4px;}
+.actDesc{color:#aaa;font-size:5.5px;line-height:1.7;}
+.closeBtn{display:block;margin:20px auto 0;background:transparent;border:2px solid #F5A623;color:#F5A623;font-family:'Press Start 2P',monospace;font-size:7px;padding:8px 20px;border-radius:4px;cursor:pointer;}
+.closeBtn:hover{background:#F5A623;color:#0a1628;}
+#actModal{position:absolute;inset:0;background:rgba(0,0,0,0.88);display:none;align-items:center;justify-content:center;z-index:60;}
+#actBox{background:linear-gradient(160deg,#0a1628,#0e2a1a);border:3px solid #F5A623;border-radius:8px;width:700px;max-height:540px;overflow-y:auto;padding:24px;}
+#actBox::-webkit-scrollbar{width:6px;}
+#actBox::-webkit-scrollbar-thumb{background:#F5A623;border-radius:3px;}
+#actContent{color:#ccc;font-size:6px;line-height:2;}
+.qText{color:#F5A623;font-size:7px;margin-bottom:10px;line-height:1.8;}
+.choiceBtn{display:block;width:100%;text-align:left;background:rgba(245,166,35,0.08);border:2px solid rgba(245,166,35,0.3);color:#ddd;font-family:'Press Start 2P',monospace;font-size:6px;padding:8px 12px;border-radius:4px;cursor:pointer;margin-bottom:6px;}
+.choiceBtn:hover{border-color:#F5A623;background:rgba(245,166,35,0.18);}
+.choiceBtn.correct{border-color:#00cc66;background:rgba(0,204,102,0.2);color:#00cc66;}
+.choiceBtn.wrong{border-color:#cc3300;background:rgba(204,51,0,0.15);color:#cc3300;}
+.scoreBox{text-align:center;padding:16px;color:#F5A623;font-size:9px;}
+.backBtn{display:block;margin:16px auto 0;background:transparent;border:2px solid #F5A623;color:#F5A623;font-family:'Press Start 2P',monospace;font-size:7px;padding:8px 20px;border-radius:4px;cursor:pointer;}
+.backBtn:hover{background:#F5A623;color:#0a1628;}
+</style>
+</head>
+<body>
+<div id="gameWrap">
+  <canvas id="gc" width="960" height="600"></canvas>
+  <div id="hud">
+    <div id="hudLeft">
+      <span id="locSpan">📍 Discovery Zone Grounds</span>
+      <span style="color:#aaa;font-size:5.5px;">Arrow keys / WASD · E to enter</span>
+    </div>
+    <div id="minimap"><canvas id="mc" width="110" height="88"></canvas></div>
+  </div>
+  <div id="promptBanner">Press E to Enter</div>
+
+  <div id="splash">
+    <div class="tseal">🔭</div>
+    <div class="stitle">DR. GARG'S<br>DISCOVERY<br>ZONE</div>
+    <div class="ssub">K–12 LEARNING HUB &nbsp;·&nbsp; ALL CORE CURRICULUM</div>
+    <button id="startBtn" onclick="hideSplash()">ENTER CAMPUS</button>
+  </div>
+
+  <div id="overlay">
+    <div id="overlayBox">
+      <div class="ovTitle" id="ovTitle">BUILDING</div>
+      <div class="ovDept" id="ovDept">Department</div>
+      <div class="gradeBar">
+        <button class="gradeBtn active" onclick="setGrade('k5',this)">K–5</button>
+        <button class="gradeBtn" onclick="setGrade('68',this)">6–8</button>
+        <button class="gradeBtn" onclick="setGrade('912',this)">9–12</button>
+      </div>
+      <div class="actGrid" id="actGrid"></div>
+      <button class="closeBtn" onclick="closeOvelay()">✕ CLOSE</button>
+    </div>
+  </div>
+
+  <div id="actModal">
+    <div id="actBox">
+      <div class="ovTitle" id="actTitle">Activity</div>
+      <div id="actContent"></div>
+      <button class="backBtn" onclick="closeActivity()">← BACK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORLD_W=2400,WORLD_H=1800,TILE=32,VIEW_W=960,VIEW_H=600;
+let camX=0,camY=0;
+
+const BLDS=[
+  {id:'main-office',label:"MAIN\nOFFICE",dept:'Campus Administration',x:1100,y:860,w:220,h:160,style:'admin',emoji:'🏫',accent:'#F5A623'},
+  {id:'language-arts',label:"LANGUAGE\nARTS HALL",dept:'Reading · Writing · Grammar',x:420,y:400,w:280,h:180,style:'arts',emoji:'📚',accent:'#e07020'},
+  {id:'math-hall',label:"MATHEMATICS\nHALL",dept:'Numbers · Algebra · Geometry',x:820,y:340,w:280,h:180,style:'math',emoji:'🔢',accent:'#4090f0'},
+  {id:'science-lab',label:"SCIENCE\nLAB",dept:'Biology · Chemistry · Physics',x:1300,y:320,w:280,h:200,style:'science',emoji:'🔬',accent:'#00cc66'},
+  {id:'social-studies',label:"SOCIAL STUDIES\n& HISTORY",dept:'Geography · Civics · World History',x:1750,y:400,w:280,h:180,style:'social',emoji:'🌍',accent:'#9966ff'},
+  {id:'arts-music',label:"ARTS &\nMUSIC",dept:'Visual Arts · Music · Theater',x:360,y:800,w:240,h:180,style:'artsmusic',emoji:'🎨',accent:'#ff66cc'},
+  {id:'gymnasium',label:"GYMNASIUM",dept:'Physical Education · Health',x:1750,y:800,w:280,h:200,style:'gym',emoji:'🏃',accent:'#ff6600'},
+  {id:'computer-lab',label:"COMPUTER\nLAB",dept:'Coding · Digital Literacy · STEM',x:420,y:1200,w:280,h:180,style:'tech',emoji:'💻',accent:'#00ccff'},
+  {id:'library',label:"LIBRARY",dept:'Books · Research · Reading',x:1100,y:1300,w:280,h:180,style:'library',emoji:'📖',accent:'#d4a054'},
+];
+
+const ACTIVITIES={
+  'language-arts':{
+    k5:[
+      {icon:'🔤',name:'Sight Word Dash',desc:'Practice essential sight words with flashcards',quiz:[
+        {q:'Which word means the opposite of "hot"?',choices:['cold','warm','sun','fire'],a:0},
+        {q:'Complete: "The cat sat on the ___."',choices:['mat','sky','run','blue'],a:0},
+        {q:'Which word rhymes with "cat"?',choices:['bat','dog','run','hop'],a:0},
+        {q:'Choose the correctly spelled word:',choices:['becus','because','becasue','becase'],a:1},
+        {q:'What is the plural of "child"?',choices:['childs','children','childes','child'],a:1},
+      ]},
+      {icon:'📝',name:'Story Starters',desc:'Complete sentences and learn grammar basics',quiz:[
+        {q:'Which sentence is a complete sentence?',choices:['The big.','Ran fast.','The dog barked.','Under the tree.'],a:2},
+        {q:'What punctuation ends a question?',choices:['.','!','?',','],a:2},
+        {q:'Which is a noun?',choices:['run','happy','apple','quickly'],a:2},
+        {q:'Which is a verb?',choices:['house','jump','blue','book'],a:1},
+        {q:'Fix: "i like apples"',choices:['I like apples.','i like Apples.','I Like apples','i Like Apples.'],a:0},
+      ]},
+    ],
+    '68':[
+      {icon:'📖',name:'Literary Analysis',desc:'Analyze theme, character, and plot structure',quiz:[
+        {q:'What is the "theme" of a story?',choices:['The main character','The central message','The setting','The plot twist'],a:1},
+        {q:'Point of view where the narrator says "I" is called:',choices:['Third person','Second person','First person','Omniscient'],a:2},
+        {q:'A metaphor directly compares two things without using:',choices:['nouns','verbs','like or as','adjectives'],a:2},
+        {q:'Which device is "The wind whispered softly"?',choices:['Simile','Hyperbole','Personification','Alliteration'],a:2},
+        {q:'The rising action builds toward the:',choices:['Exposition','Climax','Resolution','Falling action'],a:1},
+      ]},
+      {icon:'✍️',name:'Essay Workshop',desc:'Practice thesis statements and paragraph structure',quiz:[
+        {q:'A strong thesis statement should be:',choices:['Very broad','A fact everyone knows','A debatable claim','A question'],a:2},
+        {q:'Topic sentences introduce a paragraph\'s:',choices:['Conclusion','Main idea','Evidence','Story'],a:1},
+        {q:'Transition words like "however" are used to:',choices:['End a paper','Connect ideas','Start an introduction','List examples'],a:1},
+        {q:'MLA format is used for:',choices:['Math problems','Lab reports','Academic writing citations','Business emails'],a:2},
+        {q:'Which sentence avoids passive voice?',choices:['The ball was kicked by Sam.','The cake was eaten.','Sam kicked the ball.','It was done by them.'],a:2},
+      ]},
+    ],
+    '912':[
+      {icon:'📜',name:'Rhetoric & Argument',desc:'Master persuasion, logic, and argument structure',quiz:[
+        {q:'Ethos, Pathos, and Logos are appeals in:',choices:['Math proofs','Scientific method','Rhetoric and argument','Literary fiction'],a:2},
+        {q:'"Ethos" appeals to the audience\'s sense of:',choices:['Emotion','Logic','Credibility','Fear'],a:2},
+        {q:'An ad hominem fallacy attacks a person\'s:',choices:['Logic','Evidence','Character','Conclusion'],a:2},
+        {q:'Which is an example of a logical fallacy?',choices:['Using statistics','Citing experts','Slippery slope','Comparing sources'],a:2},
+        {q:'Deductive reasoning moves from:',choices:['Specific to general','General to specific','Evidence to question','Conclusion to premise'],a:1},
+      ]},
+      {icon:'📚',name:'AP Lit Prep',desc:'Analyze complex texts and literary movements',quiz:[
+        {q:'Modernist literature often features:',choices:['Happy endings','Stream of consciousness','Simple linear plots','Fairy tale elements'],a:1},
+        {q:'An unreliable narrator may have:',choices:['Perfect knowledge','A biased or limited perspective','No name','Two personalities'],a:1},
+        {q:'"In medias res" means:',choices:['Story ends abruptly','Story starts in the middle of action','Story told backwards','Story with no plot'],a:1},
+        {q:'The Great Gatsby is an example of:',choices:['Realism','Romanticism,'Modernism','Postmodernism'],a:2},
+        {q:'Dramatic irony occurs when:',choices:['The character knows more than the audience','The audience knows more than the character','Both are equally informed','No one knows anything'],a:1},
+      ]},
+    ],
+  },
+  'math-hall':{
+    k5:[
+      {icon:'➕',name:'Number Ninjas',desc:'Master addition, subtraction & place value',quiz:[
+        {q:'What is 47 + 36?',choices:['73','83','82','84'],a:1},
+        {q:'What is 100 − 57?',choices:['43','53','47','37'],a:0},
+        {q:'Value of 6 in 364?',choices:['6','60','600','6000'],a:1},
+        {q:'Round 78 to the nearest ten:',choices:['70','75','80','90'],a:2},
+        {q:'9 × 7 = ?',choices:['54','56','63','72'],a:2},
+      ]},
+      {icon:'📐',name:'Shape Explorer',desc:'Learn about 2D and 3D geometry',quiz:[
+        {q:'How many sides does a hexagon have?',choices:['5','6','7','8'],a:1},
+        {q:'A shape with 4 equal sides and 4 right angles:',choices:['Rectangle','Triangle','Square','Pentagon'],a:2},
+        {q:'Which shape has no corners?',choices:['Square','Triangle','Circle','Rectangle'],a:2},
+        {q:'How many faces does a cube have?',choices:['4','5','6','8'],a:2},
+        {q:'A right angle measures exactly:',choices:['45°','60°','90°','180°'],a:2},
+      ]},
+    ],
+    '68':[
+      {icon:'📊',name:'Ratio & Proportion',desc:'Solve ratios, rates, and proportional reasoning',quiz:[
+        {q:'If 3 pencils cost $0.75, what does 1 cost?',choices:['$0.15','$0.20','$0.25','$0.30'],a:2},
+        {q:'Simplify the ratio 24:36',choices:['3:4','2:3','4:6','6:9'],a:1},
+        {q:'What is 40% of 80?',choices:['24','28','32','36'],a:2},
+        {q:'150 miles in 3 hours. Speed?',choices:['45 mph','50 mph','55 mph','60 mph'],a:1},
+        {q:'If x/4 = 6, then x =',choices:['2','10','24','32'],a:2},
+      ]},
+      {icon:'📈',name:'Algebra Intro',desc:'Variables, expressions & linear equations',quiz:[
+        {q:'Solve: 2x + 5 = 13',choices:['x=3','x=4','x=6','x=8'],a:1},
+        {q:'Slope of y = 3x + 2?',choices:['2','3','5','1'],a:1},
+        {q:'Simplify: 3a + 4b + 2a',choices:['9ab','5a + 4b','7a + 2b','5a + 2b'],a:1},
+        {q:'Which equation represents a straight line?',choices:['y=x²','y=3x+1','y=x³','y=√x'],a:1},
+        {q:'Evaluate 4x² when x=3:',choices:['24','36','48','72'],a:1},
+      ]},
+    ],
+    '912':[
+      {icon:'∫',name:'Pre-Calc & Trig',desc:'Functions, trig identities & limits',quiz:[
+        {q:'sin(90°) equals:',choices:['0','0.5','1','√2/2'],a:2},
+        {q:'Period of y = sin(2x)?',choices:['π','2π','π/2','4π'],a:0},
+        {q:'log₂(8) equals:',choices:['2','3','4','8'],a:1},
+        {q:'Vertex of y = (x-3)² + 4 is:',choices:['(3,4)','(-3,4)','(3,-4)','(-3,-4)'],a:0},
+        {q:'cos(0°) equals:',choices:['0','1','-1','0.5'],a:1},
+      ]},
+      {icon:'📉',name:'Statistics & Probability',desc:'Data analysis, distributions & inference',quiz:[
+        {q:'Median of {3,5,7,9,11}?',choices:['5','7','9','3'],a:1},
+        {q:'P(A and B) for independent events:',choices:['P(A)+P(B)','P(A)×P(B)','P(A)-P(B)','P(A)/P(B)'],a:1},
+        {q:'Standard deviation measures:',choices:['Center of data','Spread of data','Sample size','Highest value'],a:1},
+        {q:'A z-score of 0 means the value is:',choices:['At the maximum','At the mean','Below average','An outlier'],a:1},
+        {q:'Which best describes a normal distribution?',choices:['Skewed right','Bell-shaped','Flat','Bimodal'],a:1},
+      ]},
+    ],
+  },
+  'science-lab':{
+    k5:[
+      {icon:'🌱',name:'Life Science Explorer',desc:'Plants, animals & ecosystems',quiz:[
+        {q:'What do plants need for photosynthesis?',choices:['Moonlight & water','Sunlight, water & CO₂','Soil & darkness','Heat & oxygen'],a:1},
+        {q:'Which animal is a mammal?',choices:['Snake','Eagle','Dolphin','Frog'],a:2},
+        {q:'Largest planet in our solar system?',choices:['Earth','Saturn','Jupiter','Uranus'],a:2},
+        {q:'Which state of matter has no definite shape or volume?',choices:['Solid','Liquid','Gas','Plasma'],a:2},
+        {q:'Which force pulls objects toward Earth?',choices:['Magnetism','Gravity','Friction','Tension'],a:1},
+      ]},
+      {icon:'🔍',name:'Scientific Method',desc:'Observation, hypothesis & experiments',quiz:[
+        {q:'First step of the scientific method?',choices:['Experiment','Question/Observation','Hypothesis','Conclusion'],a:1},
+        {q:'A hypothesis is best described as a:',choices:['Proven fact','Testable prediction','Final answer','Random guess'],a:1},
+        {q:'The variable you change in an experiment:',choices:['Dependent variable','Control variable','Independent variable','Constant'],a:2},
+        {q:'Which tool measures temperature?',choices:['Microscope','Thermometer','Balance','Graduated cylinder'],a:1},
+        {q:'A control group in an experiment:',choices:['Gets the treatment','Has no treatment for comparison','Measures time','Records data'],a:1},
+      ]},
+    ],
+    '68':[
+      {icon:'⚗️',name:'Chemistry Basics',desc:'Elements, compounds & reactions',quiz:[
+        {q:'Chemical symbol for water?',choices:['WA','H₂O','HO₂','W'],a:1},
+        {q:'An atom\'s nucleus contains:',choices:['Electrons only','Protons and neutrons','Neutrons only','Electrons and protons'],a:1},
+        {q:'Atomic number of Carbon?',choices:['4','6','8','12'],a:1},
+        {q:'Acids have a pH:',choices:['Above 7','Equal to 7','Below 7','Equal to 14'],a:2},
+        {q:'What type of bond shares electrons?',choices:['Ionic','Metallic','Covalent','Hydrogen'],a:2},
+      ]},
+      {icon:'🧬',name:'Cell Biology',desc:'Cell structure, DNA & genetics',quiz:[
+        {q:'"Powerhouse" of the cell?',choices:['Nucleus','Ribosome','Mitochondria','Cell wall'],a:2},
+        {q:'DNA is stored in the:',choices:['Cytoplasm','Cell membrane','Nucleus','Vacuole'],a:2},
+        {q:'Which type of cell has no nucleus?',choices:['Plant cell','Animal cell','Prokaryotic cell','Eukaryotic cell'],a:2},
+        {q:'Process of cell division?',choices:['Meiosis','Osmosis','Mitosis','Diffusion'],a:2},
+        {q:'Which base pairs with Adenine in DNA?',choices:['Guanine','Cytosine','Thymine','Uracil'],a:2},
+      ]},
+    ],
+    '912':[
+      {icon:'⚛️',name:'Physics & Forces',desc:'Motion, energy & electromagnetism',quiz:[
+        {q:"Newton's 2nd Law: F = ?",choices:['m/a','ma','m+a','m-a'],a:1},
+        {q:'Unit of electric resistance?',choices:['Volt','Ampere','Ohm','Watt'],a:2},
+        {q:'What type of wave is light?',choices:['Mechanical','Longitudinal','Electromagnetic','Sound'],a:2},
+        {q:'Kinetic energy equals:',choices:['mgh','½mv²','Fd','mv'],a:1},
+        {q:'Speed of light in vacuum (approx)?',choices:['3×10⁶ m/s','3×10⁸ m/s','3×10¹⁰ m/s','3×10⁴ m/s'],a:1},
+      ]},
+      {icon:'🧪',name:'Advanced Chemistry',desc:'Stoichiometry, thermodynamics & equilibrium',quiz:[
+        {q:"Avogadro's number is approximately:",choices:['6.02×10²³','6.02×10²²','3.01×10²³','9.03×10²³'],a:0},
+        {q:'In an exothermic reaction, heat is:',choices:['Absorbed','Neither absorbed nor released','Released','Converted to light'],a:2},
+        {q:'Molarity (M) is defined as:',choices:['moles/kg','moles/L','grams/L','grams/mL'],a:1},
+        {q:'pH + pOH at 25°C equals:',choices:['7','10','14','1'],a:2},
+        {q:"Le Chatelier's principle deals with:",choices:['Gas laws','Chemical equilibrium','Atomic structure','Organic chemistry'],a:1},
+      ]},
+    ],
+  },
+  'social-studies':{
+    k5:[
+      {icon:'🗺️',name:'Map Masters',desc:'Continents, oceans & cardinal directions',quiz:[
+        {q:'How many continents are on Earth?',choices:['5','6','7','8'],a:2},
+        {q:'What is the largest ocean?',choices:['Atlantic','Indian','Arctic','Pacific'],a:3},
+        {q:'Which direction does the sun rise?',choices:['West','North','East','South'],a:2},
+        {q:'Capital of the United States?',choices:['New York','Los Angeles','Washington D.C.','Chicago'],a:2},
+        {q:'Which continent is the largest?',choices:['North America','Africa','Asia','Europe'],a:2},
+      ]},
+      {icon:'🏛️',name:'Civics Basics',desc:'Rules government & community',quiz:[
+        {q:'Who makes laws in the United States?',choices:['The President','The Supreme Court','Congress','Governors'],a:2},
+        {q:'How many branches does the U.S. government have?',choices:['2','3','4','5'],a:1},
+        {q:'The Bill of Rights protects:',choices:['Only the President','Individual freedoms','Tax laws','Military rules'],a:1},
+        {q:'Citizens participate in democracy by:',choices:['Only paying taxes','Voting','Moving away','Being silent'],a:1},
+        {q:'Which document begins "We the People"?',choices:['Declaration of Independence','Bill of Rights','Constitution','Gettysburg Address'],a:2},
+      ]},
+    ],
+    '68':[
+      {icon:'⚔️',name:'World History',desc:'Ancient civilizations through the modern era',quiz:[
+        {q:'The Renaissance began in which country?',choices:['France','England','Italy','Spain'],a:2},
+        {q:'The Magna Carta (1215) was signed by:',choices:['King John of England','Julius Caesar','Napoleon Bonaparte','George Washington'],a:0},
+        {q:'The Industrial Revolution began in:',choices:['France','Germany','United States','Great Britain'],a:3},
+        {q:'The French Revolution began in:',choices:['1776','1789','1804','1815'],a:1},
+        {q:'Which empire was ruled by Genghis Khan?',choices:['Roman','Ottoman','Mongol','Byzantine'],a:2},
+      ]},
+      {icon:'🌐',name:'U.S. History',desc:'From colonial times through the 20th century',quiz:[
+        {q:'Declaration of Independence sined in:',choices:['1774','1775','1776','1777'],a:2},
+        {q:'The Civil War ended in:',choices:['1863','1864','1865','1866'],a:2},
+        {q:'The 13th Amendment abolished:',choices:['Taxes','Slavery','Child labor','Prohibition'],a:1},
+        {q:'The Great Depression began after the crash of:',choices:['1919','1925','1929','1933'],a:2},
+        {q:'The U.S. entered WWII after the attack on:',choices:['London','Pearl Harbor','D-Day','Berlin'],a:1},
+      ]},
+    ],
+    '912':[
+      {icon:'⚖️',name:'AP Government',desc:'Constitutional law, civil liberties & policy',quiz:[
+        {q:'Judicial review was established in:',choices:['McCulloch v. Maryland','Brown v. Board','Marbury v. Madison','Plessy v. Ferguson'],a:2},
+        {q:'How many members are in the U.S. Senate?',choices:['100','435','535','50'],a:0},
+        {q:'The commerce clause is found in Article:',choices:['I','II','III','IV'],a:0},
+        {q:'A filibuster is used to:',choices:['Speed up voting','Delay or block legislation','Override a veto','Confirm judges'],a:1},
+        {q:'Which amendment guarantees freedom of speech?',choices:['1st','2nd','4th','5th'],a:0},
+      ]},
+      {icon:'🌍',name:'World Geography & Economics',desc:'Global systems, trade & geopolitics',quiz:[
+        {q:'GDP stands for:',choices:['General Development Plan','Gross Domestic Product','Global Dollar Price','Government Deficit Plan'],a:1},
+        {q:'USMCA is a trade agreement between:',choices:['US, UK, Canada','US, Canada, Mexico','North America + EU','US, Mexico, Cuba'],a:1},
+        {q:'The United Nations was founded after:',choices:['WWI','WWII','Korean War','Cold War'],a:1},
+        {q:'Which country has the largest population?',choices:['USA','Russia','India','China'],a:2},
+        {q:'NATO is primarily a:',choices:['Trade alliance','Military alliance','Environmental treaty','Economic union'],a:1},
+      ]},
+    ],
+  },
+  'arts-music':{
+    k5:[
+      {icon:'🎵',name:'Music Explorers',desc:'Notes, rhythm & musical instruments',quiz:[
+        {q:'How many lines does a musical staff have?',choices:['3','4','5','6'],a:2},
+        {q:'Which family includes the violin?',choices:['Woodwind','Brass','Percussion','String'],a:3},
+        {q:'What does "forte" mean?',choices:['Soft','Loud','Fast','Slow'],a:1},
+        {q:'A quarter note gets how many beats?',choices:['½','1','2','4'],a:1},
+        {q:'The first note in the musical alphabet:',choices:['C','A','G','E'],a:1},
+      ]},
+      {icon:'🖌️',name:'Color & Shape Art',desc:'Primary colors, patterns & art elements',quiz:[
+        {q:'What are the three primary colors?',choices:['Red, Orange, Yellow','Red, Blue, Yellow','Blue, Green, Purple','Orange, Green, Violet'],a:1},
+        {q:'Red + Blue = ?',choices:['Orange','Green','Purple','Brown'],a:2},
+        {q:'Art element describing lightness/darkness:',choices:['Color','Line','Value','Texture'],a:2},
+        {q:'Perspective in art creates the illusion of:',choices:['Color','Depth','Sound','Texture'],a:1},
+        {q:'Which artist painted the Mona Lisa?',choices:['Michelangelo','Raphael','Leonardo da Vinci','Botticelli'],a:2},
+      ]},
+    ],
+    '68':[
+      {icon:'🎸',name:'Music Theory',desc:'Scales, chords & composition basics',quiz:[
+        {q:'A major scale has how many notes?',choices:['5','7','8','12'],a:1},
+        {q:'Tempo means:',choices:['Volume','Key signature','Speed of music','Time signature'],a:2},
+        {q:'A chord with three notes is called a:',choices:['Dyad','Triad','Tetrad','Arpeggio'],a:1},
+        {q:'Impressionism began in which country?',choices:['Italy','Spain','France','Germany'],a:2},
+        {q:'Claude Monet is associated with:',choices:['Cubism','Surrealism','Impressionism','Realism'],a:2},
+      ]},
+      {icon:'🎭',name:'Art History',desc:'Major art movements and artists',quiz:[
+        {q:'Pablo Picasso co-founded which movement?',choices:['Surrealism','Cubism','Abstract Expressionism','Pop Art'],a:1},
+        {q:'The Starry Night was painted by:',choices:['Monet','Picasso','Van Gogh','Dali'],a:2},
+        {q:'The Renaissance roughly began in:',choices:['1000','1300','1400','1600'],a:2},
+        {q:'Michelangelo painted the Sistine Chapel ceiling in:',choices:['Rome','Florence','Venice','Milan'],a:0},
+        {q:'Andy Warhol is associated with:',choices:['Abstract Expressionism','Pop Art','Surrealism','Minimalism'],a:1},
+      ]},
+    ],
+    '912':[
+      {icon:'🎼',name:'AP Music Theory',desc:'Advanced harmony, form & analysis',quiz:[
+        {q:'The dominant chord is built on scale degree:',choices:['3','4','5','7'],a:2},
+        {q:'Sonata form: exposition, development, and:',choices:['Coda','Recapitulation','Bridge','Chorus'],a:1},
+        {q:'A deceptive cadence resolves to:',choices:['Tonic','Dominant','Submediant','Subdominant'],a:2},
+        {q:'Which time signature has 6 beats per measure?',choices:['3/4','4/4','6/8','2/2'],a:2},
+        {q:'The circle of fifths shows relationships between:',choices:['Tempos','Rhythms','Keys','Dynamics'],a:2},
+      ]},
+      {icon:'🖼️',name:'Studio Art & Design',desc:'Composition, media & contemporary art',quiz:[
+        {q:'The rule of thirds divides an image into:',choices:['4 sections','6 sections','9 sections','12 sections'],a:2},
+        {q:'Chiaroscuro refers to the use of:',choices:['Color contrast','Light and shadow','Texture','Perspective'],a:1},
+        {q:'Negative space refers to:',choices:['Dark colors only','The area around subjects','Errors in design','Background color'],a:1},
+        {q:'Typography primarily deals with:',choices:['Color theory','Type arrangement and style','Photography','Sculpture'],a:1},
+        {q:'Which movement did Salvador Dalí belong to?',choices:['Cubism','Impressionism','Surrealism','Pop Art'],a:2},
+      ]},
+    ],
+  },
+  'gymnasium':{
+    k5:[
+      {icon:'🏅',name:'Move & Groove',desc:'Fitness basics, coordination & teamwork',quiz:[
+        {q:'How many minutes of activity do kids need daily?',choices:[730','45','60','90'],a:2},
+        {q:'Which is an aerobic exercise?',choices:['Sleeping','Reading','Running','Sitting'],a:2},
+        {q:'What does your heart do during exercise?',choices:['Slows down','Beats faster','Stops temporarily','Shrinks'],a:1},
+        {q:'Good sportsmanship means:',choices:['Always winning','Playing fair and respecting others','Arguing with referees','Cheating secretly'],a:1},
+        {q:'Stretching before exercise helps prevent:',choices:['Sweating','Getting tired','Injury','Breathing'],a:2},
+      ]},
+    ],
+    '68':[
+      {icon:'💪',name:'Fitness Science',desc:'Anatomy, nutrition & training principles',quiz:[
+        {q:"Body's main energy source for exercise?",choices:['Protein','Fat','Carbohydrates','Vitamins'],a:2},
+        {q:'The heart is what type of muscle?',choices:['Skeletal','Smooth','Cardiac','Voluntary'],a:2},
+        {q:'BMI stands for:',choices:['Basic Muscle Index','Body Mass Index','Blood Movement Index','Body Muscle Intake'],a:1},
+        {q:'Aerobic exercise primarily improves:',choices:['Flexibility','Cardiovascular endurance','Muscle strength','Balance'],a:1},
+        {q:'How many food groups are in USDA MyPlate?',choices:['3','4','5','6'],a:2},
+      ]},
+    ],
+    '912':[
+      {icon:'🏋️',name:'Sports Science & Kinesiology',desc:'Biomechanics, physiology & training',quiz:[
+        {q:'VO₂ max measures:',choices:['Maximum running speed','Maximum oxygen uptake','Flexibility limit','Muscle fiber size'],a:1},
+        {q:'Progressive overload means:',choices:['Exercise should decrease','Training load should gradually increase','Rest is most important','Variety prevents injury'],a:1},
+        {q:'Fast-twitch muscle fibers are best for:',choices:['Marathon running','Long swimming','Sprinting and power','Yoga'],a:2},
+        {q:'FITT stands for Frequency, Intensity, Time, and:',choices:['Training','Technique','Type','Tension'],a:2},
+        {q:'Lactic acid buildup causes:',choices:['Motivation','Muscle soreness/fatigue','Improved speed','Better flexibility'],a:1},
+      ]},
+    ],
+  },
+  'computer-lab':{
+    k5:[
+      {icon:'🖥️',name:'Digital Foundations',desc:'Basic computer skills & internet safety',quiz:[
+        {q:'What does CPU stand for?',choices:['Central Power Unit','Computer Processing Unit','Central Processing Unit','Computer Power Unit'],a:2},
+        {q:'Which is safe online behavior?',choices:['Share your password with friends','Post your address online','Keep personal info private','Meet online strangers alone'],a:2},
+        {q:'What does "save" do to a file?',choices:['Deletes it','Stores it for later','Prints it','Sends it to the internet'],a:1},
+        {q:'A mouse is used to:',choices:['Type letters','Control the cursor on screen','Print documents','Connect to WiFi'],a:1},
+        {q:'Which is an example of software?',choices:['Keyboard','Monitor','Web browser','Mouse'],a:2},
+      ]},
+    ],
+    '68':[
+      {icon:'🤖',name:'Coding Concepts',desc:'Algorithms, logic & programming basics',quiz:[
+        {q:'An algorithm is:',choices:['A type of computer','A step-by-step set of instructions','A programming language','A type of file'],a:1},
+        {q:'What does HTML stand for?',choices:['Hyper Transfer Markup Language','HyperText Markup Language','High Tech Modern Language','Hyper Transfer Modern Links'],a:1},
+        {q:'A loop in programming:',choices:['Ends a program','Repeats a block of code','Opens a file','Stores a variable'],a:1},
+        {q:'Binary code uses which digits?',choices:['0-9','0 and 1','A-Z','1 and 2'],a:1},
+        {q:'An "if" statement is used for:',choices:['Repeating actions','Making decisions','Storing data','Printing output'],a:1},
+      ]},
+    ],
+    '912':[
+      {icon:'🧑‍💻',name:'AP Computer Science',desc:'Data structures, algorithms & OOP',quiz:[
+        {q:'Big O notation describes:',choices:['Memory address','Time/space complexity','Programming language','File size'],a:1},
+        {q:'OOP is based on:',choices:['Functions only','Classes and objects','Loops and arrays','Binary code'],a:1},
+        {q:'Binary search requires data to be:',choices:['Randomized','Sorted','In a linked list','Encrypted'],a:1},
+        {q:'What does SQL stand for?',choices:['Standard Query Loop','Structured Query Language','System Quick Language','Sorted Queue Logic'],a:1},
+        {q:'Recursion is when a function:',choices:['Never returns','Calls itself','Uses loops','Runs in parallel'],a:1},
+      ]},
+    ],
+  },
+  'library':{
+    k5:[
+      {icon:'📚',name:'Book Detectives',desc:'Find books, genres & library skills',quiz:[
+        {q:'Fiction books contain stories that are:',choices:['Completely true','Made up/imaginary','Only about science','Always funny'],a:1},
+        {q:'A biography is about:',choices:['Imaginary creatures','A real person\'s life','How to cook','Animals in the wild'],a:1},
+        {q:'The Dewey Decimal System is used to:',choices:['Calculate math','Organize library books','Measure earthquakes','Record music'],a:1},
+        {q:'Which part of a book gives a summary on the back?',choices:['Table of contents','Index','Book jacket/blurb','Glossary'],a:2},
+        {q:'The author of a book is the person who:',choices:['Illustrates it','Prints it','Writes it','Sells it'],a:2},
+      ]},
+    ],
+    '68':[
+      {icon:'🔎',name:'Research Skills',desc:'Sources, citations & media literacy',quiz:[
+        {q:'A primary source is:',choices:['A Wikipedia article','An encyclopedia','An original firsthand account','A textbook'],a:2},
+        {q:'Most reliable source for research?',choices:['Anonymous blog','Peer-reviewed journal article','YouTube comment','Social media post'],a:1},
+        {q:'Plagiarism means:',choices:['Citing sources correctly','Using someone else\'s work without credit','Writing original content','Doing too much research'],a:1},
+        {q:'MLA and APA are types of:',choices:['Library databases','Citation formats','Research methods','Book genres'],a:1},
+        {q:'An index in a book is found:',choices:['At the beginning','In the middle','At the end','On the cover'],a:2},
+      ]},
+    ],
+    '912':[
+      {icon:'📰',name:'Media Literacy',desc:'Evaluate sources & identify misinformation',quiz:[
+        {q:'Confirmation bias means:',choices:['Seeking evidence that confirms existing beliefs','Changing your mind with new evidence','Testing multiple hypotheses','Trusting all sources equally'],a:0},
+        {q:'A peer-reviewed article has been:',choices:['Written by a peer','Evaluated by subject-matter experts','Published online freely','Cited by many'],a:1},
+        {q:'The CRAAP test stands for Currency, Relevance, Authority, Accuracy, and:',choices:['Appeal','Purpose','Popularity','Presentation'],a:1},
+        {q:'Misinformation differs from disinformation in that misinformation:',choices:['Is always intentional','Is spread without intent to deceive','Is always political','Only appears online'],a:1},
+        {q:'An op-ed is primarily:',choices:['A factual news report','The author\'s opinion/argument','A scientific study','An advertisement'],a:1},
+      ]},
+    ],
+  },
+  'main-office':{
+    k5:[
+      {icon:'👋',name:'Welcome to Discovery Zone!',desc:'Learn about your K-12 learning hub',quiz:[
+        {q:'What does a student do when they don\'t understand something?',choices:['Give up','Ask for help','Pretend to understand','Copy someone'],a:1},
+        {q:'A good study habit is:',choices:['Studying 8 hours nonstop','Setting a timer and taking breaks','Only studying the night before','Never reviewing notes'],a:1},
+        {q:'Respect in school means:',choices:['Interrupting others','Listening when others speak','Talking during lessons','Ignoring classmates'],a:1},
+        {q:'Which subject teaches about numbers and operations?',choices:['Language Arts','Science','Mathematics','Social Studies'],a:2},
+        {q:'Critical thinking means:',choices:['Criticizing everyone','Thinking carefully and evaluating information','Never changing your mind','Memorizing all facts'],a:1},
+      ]},
+    ],
+    '68':[
+      {icon:'🎯',name:'Study Skills & Goal Setting',desc:'Academic strategies for middle school success',quiz:[
+        {q:'SMART goals are Specific, Measurable, Achievable, Relevant, and:',choices:['Random','Time-bound','Risky','Reasonable'],a:1},
+        {q:'The Cornell Notes method divides your page into:',choices:['Two sections','Three sections','Four sections','Five sections'],a:1},
+        {q:'Active reading involves:',choices:['Reading as fast as possible','Annotating and questioning the text','Reading once and moving on','Highlighting everything'],a:1},
+        {q:'Which strategy helps most with test anxiety?',choices:['Cramming all night','Skipping the test','Preparation and deep breathing','Avoiding the subject'],a:2},
+        {q:'A growth mindset believes abilities can be:',choices:['Fixed at birth','Developed with effort','Only inherited','Never changed'],a:1},
+      ]},
+    ],
+    '912':[
+      {icon:'🎓',name:'College & Career Readiness',desc:'Planning for life after high school',quiz:[
+        {q:'The FAFSA helps students with:',choices:['College applications','Financial aid for college','SAT preparation','Finding scholarships only'],a:1},
+        {q:'A GPA of 4.0 on a standard scale means:',choices:['All B grades','All C grades','All A grades','Mixed grades'],a:2},
+        {q:'An AP course can earn students:',choices:['Money','Automatic college admission','College credit','A scholarship'],a:2},
+        {q:'The SAT primarily tests:',choices:['Science and history','Math and evidence-based reading/writing','Art and music','Physical fitness'],a:1},
+        {q:'A resume should include your:',choices:['Personal opinions','Social media passwords','Work experience and skills','Political beliefs'],a:2},
+      ]},
+    ],
+  },
+};
+
+// ── PLAYER ──────────────────────────────────────────────────────────────────
+let px=1200,py=920,pdir=2,pframe=0;
+const PSPEED=3,PS=12,keys={};
+let nearBuilding=null,currentBuilding=null,currentGrade='k5';
+
+const gc=document.getElementById('gc');
+const cx=gc.getContext('2d');
+const mc=document.getElementById('mc');
+const mx=mc.getContext('2d');
+
+function drawWorld(){
+  cx.fillStyle='#1a3516';
+  cx.fillRect(0,0,VIEW_W,VIEW_H);
+  const ox=Math.round(camX),oy=Math.round(camY);
+  const tW=64,tH=32;
+  for(let ty=0;ty<WORLD_H;ty+=tH){
+    for(let tx=0;tx<WORLD_W;tx+=tW){
+      const sx=tx-ox,sy=ty-oy;
+      if(sx+tW<0||sx>VIEW_W||sy+tH<0||sy>VIEW_H)continue;
+      const alt=(Math.floor(tx/tW)+Math.floor(ty/tH))%2;
+      cx.fillStyle=alt?'#1e3a1a':'#1a3516';
+      cx.fillRect(sx,sy,tW,tH);
+    }
+  }
+  // Paths
+  cx.fillStyle='#c8a878';cx.fillRect(0-ox,840-oy,WORLD_W,80);
+  cx.fillStyle='#c8a878';cx.fillRect(1090-ox,0-oy,80,WORLD_H);
+  cx.fillStyle='#b8986a';cx.fillRect(0-ox,844-oy,WORLD_W,4);cx.fillRect(1094-ox,0-oy,4,WORLD_H);
+  // Trees decorative
+  const trees=[[200,200],[600,1400],[1800,200],[1800,1400],[700,680],[1500,680],[200,1000],[2000,1000]];
+  for(const [tx,ty] of trees){
+    const sx=tx-ox,sy=ty-oy;
+    if(sx<-40||sx>VIEW_W+40||sy<-40||sy>VIEW_H+40)continue;
+    cx.fillStyle='#2a5520';cx.beginPath();cx.arc(sx,sy,18,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#1e4418';cx.beginPath();cx.arc(sx,sy,12,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#553311';cx.fillRect(sx-3,sy+14,6,10);
+  }
+  for(const b of BLDS)drawBuilding(b,ox,oy);
+}
+
+function drawBuilding(b,ox,oy){
+  const bx=b.x-ox,by=b.y-oy;
+  if(bx+b.w<0||bx>VIEW_W||by+b.h<0||by>VIEW_H)return;
+  const style=b.style;
+  let baseColor='#1a1a2a',accentColor=b.accent||'#F5A623';
+
+  if(style==='math'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#001840');g.addColorStop(1,'#000d28');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    cx.fillStyle='rgba(64,144,240,0.15)';
+    for(let r=0;r<3;r++)for(let c=0;c<4;c++){cx.fillRect(bx+12+c*64,by+14+r*50,52,38);cx.strokeStyle='rgba(64,144,240,0.5)';cx.lineWidth=1;cx.strokeRect(bx+12+c*64,by+14+r*50,52,38);}
+  } else if(style==='science'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#002218');g.addColorStop(1,'#000e0a');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    cx.fillStyle='rgba(0,200,100,0.12)';
+    for(let r=0;r<3;r++)for(let c=0;c<3;c++){cx.fillRect(bx+14+c*84,by+16+r*56,68,44);cx.strokeStyle='rgba(0,204,102,0.4)';cx.lineWidth=1;cx.strokeRect(bx+14+c*84,by+16+r*56,68,44);}
+  } else if(style==='arts'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#3a1a00');g.addColorStop(1,'#200e00');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    for(let r=0;r<b.h;r+=12){cx.fillStyle='rgba(140,70,0,0.18)';cx.fillRect(bx,by+r,b.w,10);}
+  } else if(style==='admin'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#3a2800');g.addColorStop(1,'#1a1000');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    for(let c=0;c<4;c++){cx.fillStyle='rgba(200,160,0,0.3)';cx.fillRect(bx+20+c*52,by+20,12,b.h-30);}
+    cx.fillStyle='#c8a200';cx.fillRect(bx,by+b.h-20,b.w,20);
+    cx.strokeStyle='rgba(245,166,35,0.8)';cx.lineWidth=3;cx.strokeRect(bx+1,by+1,b.w-2,b.h-2);
+  } else if(style==='artsmusic'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#2a0028');g.addColorStop(1,'#120014');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    cx.fillStyle='rgba(255,102,204,0.12)';
+    for(let r=0;r<3;r++)for(let c=0;c<3;c++)cx.fillRect(bx+12+c*70,by+14+r*50,56,40);
+  } else if(style==='gym'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#2a0e00');g.addColorStop(1,'#150700');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    cx.fillStyle='rgba(255,102,0,0.18)';
+    for(let r=0;r<4;r++)cx.fillRect(bx,by+r*(b.h/4),b.w,4);
+  } else if(style==='tech'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#001828');g.addColorStop(1,'#000c18');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    cx.fillStyle='rgba(0,204,255,0.12)';
+    for(let r=0;r<3;r++)for(let c=0;c<3;c++){cx.fillRect(bx+12+c*82,by+14+r*50,68,40);cx.strokeStyle='rgba(0,204,255,0.35)';cx.lineWidth=1;cx.strokeRect(bx+12+c*82,by+14+r*50,68,40);}
+  } else if(style==='library'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#1e0d00');g.addColorStop(1,'#0e0600');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    for(let r=0;r<b.h;r+=12)cx.fillRect(bx,by+r,b.w,10);
+  } else if(style==='social'){
+    const g=cx.createLinearGradient(bx,by,bx,by+b.h);g.addColorStop(0,'#1a0a38');g.addColorStop(1,'#0e0520');
+    cx.fillStyle=g;cx.fillRect(bx,by,b.w,b.h);
+    cx.fillStyle='rgba(153,102,255,0.15)';
+    for(let r=0;r<3;r++)for(let c=0;c<3;c++){cx.fillRect(bx+14+c*84,by+16+r*48,68,36);cx.strokeStyle='rgba(153,102,255,0.4)';cx.lineWidth=1;cx.strokeRect(bx+14+c*84,by+16+r*48,68,36);}
+  } else {
+    cx.fillStyle='#2a2a3a';cx.fillRect(bx,by,b.w,b.h);
+  }
+
+  // Accent stripe top
+  cx.fillStyle=accentColor;cx.fillRect(bx,by,b.w,10);
+  // Border
+  cx.strokeStyle=accentColor+'99';cx.lineWidth=2;cx.strokeRect(bx+1,by+1,b.w-2,b.h-2);
+  // Door
+  const dw=24,dh=32;
+  cx.fillStyle='rgba(0,0,0,0.75)';cx.fillRect(bx+b.w/2-dw/2,by+b.h-dh,dw,dh);
+  cx.strokeStyle=accentColor;cx.lineWidth=1.5;cx.strokeRect(bx+b.w/2-dw/2,by+b.h-dh,dw,dh);
+  // Sign background
+  const sw=Math.min(b.w-4,144);
+  cx.fillStyle='rgba(0,12,6,0.93)';cx.fillRect(bx+b.w/2-sw/2,by+b.h-56,sw,24);
+  cx.strokeStyle=accentColor;cx.lineWidth=1;cx.strokeRect(bx+b.w/2-sw/2,by+b.h-56,sw,24);
+  // Sign text
+  cx.fillStyle=accentColor;cx.font="5px 'Press Start 2P',monospace";cx.textAlign='center';
+  const lines=b.label.split('\n');
+  if(lines.length===1)cx.fillText(lines[0].substring(0,20),bx+b.w/2,by+b.h-39);
+  else{cx.fillText(lines[0].substring(0,18),bx+b.w/2,by+b.h-49);cx.fillText(lines[1].substring(0,18),bx+b.w/2,by+b.h-38);}
+  // Emoji
+  cx.font='16px serif';cx.fillText(b.emoji,bx+b.w/2,by+b.h-60);
+}
+
+function drawPlayer(){
+  const sx=Math.round(px-camX),sy=Math.round(py-camY);
+  const fr=Math.floor(pframe/8)%2;
+  cx.fillStyle='rgba(0,0,0,0.25)';cx.fillRect(sx-PS+4,sy+PS*2-4,PS*2-8,6);
+  cx.fillStyle='#F5A623';cx.fillRect(sx-PS/2,sy,PS,PS*2);
+  cx.fillStyle='#333';
+  if(fr===0){cx.fillRect(sx-PS/2,sy+PS*2-4,6,4);cx.fillRect(sx+PS/2-6,sy+PS*2-4,6,4);}
+  else if(pdir===3){cx.fillRect(sx-PS/2-2,sy+PS*2-4,8,4);cx.fillRect(sx+PS/2-6,sy+PS*2-4,6,4);}
+  else{cx.fillRect(sx-PS/2,sy+PS*2-4,6,4);cx.fillRect(sx+PS/2-4,sy+PS*2-4,8,4);}
+  cx.fillStyle='#ffe0b0';cx.fillRect(sx-PS/2+1,sy-PS+1,PS-2,PS-2);
+  cx.fillStyle='#553300';cx.fillRect(sx-PS/2+1,sy-PS+1,PS-2,3);
+  cx.fillStyle='#333';
+  if(pdir===3)cx.fillRect(sx-PS/2+2,sy-PS+4,2,2);
+  else if(pdir===1)cx.fillRect(sx+PS/2-4,sy-PS+4,2,2);
+  else{cx.fillRect(sx-2,sy-PS+4,2,2);cx.fillRect(sx+2,sy-PS+4,2,2);}
+}
+
+function drawMinimap(){
+  mx.fillStyle='#0a1628';mx.fillRect(0,0,110,88);
+  const sX=110/WORLD_W,sY=88/WORLD_H;
+  mx.fillStyle='#c8a878';mx.fillRect(0,840*sY,110,80*sY);mx.fillRect(1090*sX,0,80*sX,88);
+  for(const b of BLDS){mx.fillStyle=b.accent||'#F5A623';mx.fillRect(b.x*sX,b.y*sY,b.w*sX,b.h*sY);}
+  mx.fillStyle='#fff';mx.fillRect(px*sX-1,py*sY-1,3,3);
+  mx.strokeStyle='#F5A623';mx.lineWidth=1;mx.strokeRect(0,0,110,88);
+}
+
+document.addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if((e.key==='e'||e.key==='E')&&nearBuilding){
+    if(document.getElementById('overlay').style.display!=='flex'&&
+       document.getElementById('actModal').style.display!=='flex')
+      openBuilding(nearBuilding);
+  }
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();
+});
+document.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+function collides(nx,ny){
+  for(const b of BLDS)if(nx+PS>b.x&&nx-PS<b.x+b.w&&ny+PS>b.y&&ny-PS<b.y+b.h)return true;
+  return nx<PS||nx>WORLD_W-PS||ny<PS||ny>WORLD_H-PS;
+}
+
+function update(){
+  if(document.getElementById('overlay').style.display==='flex'||
+     document.getElementById('actModal').style.display==='flex')return;
+  let dx=0,dy=0;
+  if(keys['ArrowUp']||keys['w']||keys['W']){dy=-PSPEED;pdir=0;}
+  if(keys['ArrowDown']||keys['s']||keys['S']){dy=PSPEED;pdir=2;}
+  if(keys['ArrowLeft']||keys['a']||keys['A']){dx=-PSPEED;pdir=3;}
+  if(keys['ArrowRight']||keys['d']||keys['D']){dx=PSPEED;pdir=1;}
+  if(dx||dy)pframe++;else pframe=0;
+  if(!collides(px+dx,py))px+=dx;
+  if(!collides(px,py+dy))py+=dy;
+  camX=Math.max(0,Math.min(WORLD_W-VIEW_W,px-VIEW_W/2));
+  camY=Math.max(0,Math.min(WORLD_H-VIEW_H,py-VIEW_H/2));
+  nearBuilding=null;
+  for(const b of BLDS){
+    if(px>b.x-44&&px<b.x+b.w+44&&py>b.y-44&&py<b.y+b.h+44){nearBuilding=b;break;}
+  }
+  const pb=document.getElementById('promptBanner');
+  const loc=document.getElementById('locSpan');
+  if(nearBuilding){
+    pb.style.opacity='1';
+    pb.textContent='Press E → '+nearBuilding.label.replace('\n',' ');
+    loc.textContent='📍 '+nearBuilding.label.replace('\n',' ');
+  }else{pb.style.opacity='0';loc.textContent='📍 Discovery Zone Grounds';}
+}
+
+function render(){
+  cx.clearRect(0,0,VIEW_W,VIEW_H);
+  drawWorld();drawPlayer();drawMinimap();
+}
+
+let lastTime=0;
+function loop(ts){if(ts-lastTime>16){lastTime=ts;update();render();}requestAnimationFrame(loop);}
+
+// ── OVERLAY ──────────────────────────────────────────────────────────────────
+function openBuilding(b){
+  currentBuilding=b;
+  document.getElementById('ovTitle').textContent=b.label.replace('\n',' ');
+  document.getElementById('ovDept').textContent=b.dept;
+  document.querySelectorAll('.gradeBtn').forEach(btn=>btn.classList.toggle('active',btn.textContent==='K–5'));
+  currentGrade='k5';renderActivities();
+  document.getElementById('overlay').style.display='flex';
+}
+function closeOverlay(){document.getElementById('overlay').style.display='none';}
+function setGrade(g,btn){
+  currentGrade=g;
+  document.querySelectorAll('.gradeBtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderActivities();
+}
+function renderActivities(){
+  const grid=document.getElementById('actGrid');
+  const acts=(ACTIVITIES[currentBuilding.id]&&ACTIVITIES[currentBuilding.id][currentGrade])||[];
+  if(!acts.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#aaa;font-size:6px;padding:20px;">More activities coming soon!</div>';return;}
+  grid.innerHTML=acts.map((a,i)=>`<div class="actCard" onclick="startActivity(${i})"><div class="actIcon">${a.icon}</div><div class="actName">${a.name}</div><div class="actDesc">${a.desc}</div></div>`).join('');
+}
+
+// ── ACTIVITY ─────────────────────────────────────────────────────────────────
+let currentAct=null,currentQ=0,score=0;
+function startActivity(idx){
+  currentAct=ACTIVITIES[currentBuilding.id][currentGrade][idx];
+  currentQ=0;score=0;
+  document.getElementById('actTitle').textContent=currentAct.name;
+  renderQuestion();
+  document.getElementById('actModal').style.display='flex';
+}
+function renderQuestion(){
+  const content=document.getElementById('actContent');
+  const q=currentAct.quiz[currentQ];
+  if(!q){
+    const pct=Math.round(score/currentAct.quiz.length*100);
+    content.innerHTML=`<div class="scoreBox"><div style="font-size:28px;margin-bottom:10px">${pct===100?'🏆':pct>=60?'⭐':'💪'}|/div><div>Score: ${score}/${currentAct.quiz.length} &nbsp;(${pct}%)</div><div style="font-size:5.5px;color:#aaa;margin-top:12px">${pct===100?'Perfect! You are a Discovery Zone champion!':pct>=60?'Great job! Keep exploring and learning!':'Keep practicing — every expert was once a beginner!'}</div></div>`;
+    return;
+  }
+  content.innerHTML=`<div style="color:#aaa;font-size:5.5px;margin-bottom:8px">Question ${currentQ+1} of ${currentAct.quiz.length}</div><div class="qText">${q.q}</div>${q.choices.map((c,i)=>`<button class="choiceBtn" onclick="answer(${i})">${c}</button>`).join('')}`;
+}
+function answer(idx){
+  const q=currentAct.quiz[currentQ];
+  document.querySelectorAll('.choiceBtn').forEach((b,i)=>{
+    if(i===q.a)b.classList.add('correct');
+    else if(i===idx&&idx!==q.a)b.classList.add('wrong');
+    b.onclick=null;
+  });
+  if(idx===q.a)score++;
+  setTimeout(()=>{currentQ++;renderQuestion();},900);
+}
+function closeActivity(){document.getElementById('actModal').style.display='none';}
+
+function hideSplash(){
+  document.getElementById('splash').style.display='none';
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
