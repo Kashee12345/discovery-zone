@@ -83,7 +83,7 @@ canvas{display:block;image-rendering:pixelated;}
         <button class="gradeBtn" onclick="setGrade('912',this)">9–12</button>
       </div>
       <div class="actGrid" id="actGrid"></div>
-      <button class="closeBtn" onclick="closeOvelay()">✕ CLOSE</button>
+      <button class="closeBtn" onclick="closeOverlay()">✕ CLOSE</button>
     </div>
   </div>
 
@@ -143,7 +143,7 @@ const ACTIVITIES={
         {q:'Topic sentences introduce a paragraph\'s:',choices:['Conclusion','Main idea','Evidence','Story'],a:1},
         {q:'Transition words like "however" are used to:',choices:['End a paper','Connect ideas','Start an introduction','List examples'],a:1},
         {q:'MLA format is used for:',choices:['Math problems','Lab reports','Academic writing citations','Business emails'],a:2},
-        {q:'Which sentence avoids passive voice?',choices:['The ball was kicked by Sam.','The cake was eaten.','Sam kicked the ball.','It was done by them.'],a:2},
+        {q:'Which sentence avoids passive voice?',choices:['The ball was kicked by Sam.','The cake was eaten.','Sam kicked the ball.','It was done by them.'],a:2},
       ]},
     ],
     '912':[
@@ -272,7 +272,7 @@ const ACTIVITIES={
         {q:'Capital of the United States?',choices:['New York','Los Angeles','Washington D.C.','Chicago'],a:2},
         {q:'Which continent is the largest?',choices:['North America','Africa','Asia','Europe'],a:2},
       ]},
-      {icon:'🏛️',name:'Civics Basics',desc:'Rules government & community',quiz:[
+      {icon:'🏛️',name:'Civics Basics',desc:'Rules, government & community',quiz:[
         {q:'Who makes laws in the United States?',choices:['The President','The Supreme Court','Congress','Governors'],a:2},
         {q:'How many branches does the U.S. government have?',choices:['2','3','4','5'],a:1},
         {q:'The Bill of Rights protects:',choices:['Only the President','Individual freedoms','Tax laws','Military rules'],a:1},
@@ -289,7 +289,7 @@ const ACTIVITIES={
         {q:'Which empire was ruled by Genghis Khan?',choices:['Roman','Ottoman','Mongol','Byzantine'],a:2},
       ]},
       {icon:'🌐',name:'U.S. History',desc:'From colonial times through the 20th century',quiz:[
-        {q:'Declaration of Independence sined in:',choices:['1774','1775','1776','1777'],a:2},
+        {q:'Declaration of Independence signed in:',choices:['1774','1775','1776','1777'],a:2},
         {q:'The Civil War ended in:',choices:['1863','1864','1865','1866'],a:2},
         {q:'The 13th Amendment abolished:',choices:['Taxes','Slavery','Child labor','Prohibition'],a:1},
         {q:'The Great Depression began after the crash of:',choices:['1919','1925','1929','1933'],a:2},
@@ -366,7 +366,7 @@ const ACTIVITIES={
   'gymnasium':{
     k5:[
       {icon:'🏅',name:'Move & Groove',desc:'Fitness basics, coordination & teamwork',quiz:[
-        {q:'How many minutes of activity do kids need daily?',choices:[730','45','60','90'],a:2},
+        {q:'How many minutes of activity do kids need daily?',choices:['30','45','60','90'],a:2},
         {q:'Which is an aerobic exercise?',choices:['Sleeping','Reading','Running','Sitting'],a:2},
         {q:'What does your heart do during exercise?',choices:['Slows down','Beats faster','Stops temporarily','Shrinks'],a:1},
         {q:'Good sportsmanship means:',choices:['Always winning','Playing fair and respecting others','Arguing with referees','Cheating secretly'],a:1},
@@ -708,7 +708,7 @@ function renderQuestion(){
   const q=currentAct.quiz[currentQ];
   if(!q){
     const pct=Math.round(score/currentAct.quiz.length*100);
-    content.innerHTML=`<div class="scoreBox"><div style="font-size:28px;margin-bottom:10px">${pct===100?'🏆':pct>=60?'⭐':'💪'}|/div><div>Score: ${score}/${currentAct.quiz.length} &nbsp;(${pct}%)</div><div style="font-size:5.5px;color:#aaa;margin-top:12px">${pct===100?'Perfect! You are a Discovery Zone champion!':pct>=60?'Great job! Keep exploring and learning!':'Keep practicing — every expert was once a beginner!'}</div></div>`;
+    content.innerHTML=`<div class="scoreBox"><div style="font-size:28px;margin-bottom:10px">${pct===100?'🏆':pct>=60?'⭐':'💪'}</div><div>Score: ${score}/${currentAct.quiz.length} &nbsp;(${pct}%)</div><div style="font-size:5.5px;color:#aaa;margin-top:12px">${pct===100?'Perfect! You are a Discovery Zone champion!':pct>=60?'Great job! Keep exploring and learning!':'Keep practicing — every expert was once a beginner!'}</div></div>`;
     return;
   }
   content.innerHTML=`<div style="color:#aaa;font-size:5.5px;margin-bottom:8px">Question ${currentQ+1} of ${currentAct.quiz.length}</div><div class="qText">${q.q}</div>${q.choices.map((c,i)=>`<button class="choiceBtn" onclick="answer(${i})">${c}</button>`).join('')}`;
